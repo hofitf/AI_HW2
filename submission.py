@@ -35,7 +35,7 @@ def smart_heuristic(env: WarehouseEnv, robot_id: int):
     if mister_robot.package is not None and mister_robot.battery > manhattan_distance(mister_robot.position,
                                                                                       mister_robot.package.destination):
         return 1000 + 50 * manhattan_distance(mister_robot.package.position, mister_robot.package.destination) + \
-               100 * mister_robot.credit + 50 * mister_robot.battery
+               100 * mister_robot.credit + 100 * mister_robot.battery
     elif mister_robot.package is not None and mister_robot.battery <= \
             manhattan_distance(mister_robot.position, mister_robot.package.destination):
         return 500 * mister_robot.credit + 100 * mister_robot.battery - min_distance_charge(env, robot_id)
