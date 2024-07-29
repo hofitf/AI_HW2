@@ -3,9 +3,49 @@ from WarehouseEnv import WarehouseEnv, manhattan_distance
 import random
 
 
-# TODO: section a : 3
+def min_distance_charge(env: WarehouseEnv, robot_id: int):
+    mister_robot = env.get_robot(robot_id)
+    if manhattan_distance(env.charge_stations[0].position, mister_robot.position) < manhattan_distance(
+            env.charge_stations[1].position, mister_robot.position):
+        return manhattan_distance(env.charge_stations[0].position, mister_robot.position)
+    return manhattan_distance(env.charge_stations[1].position, mister_robot.position)
+
+
+def best_credit_package_distance(env: WarehouseEnv, robot_id: int):
+    mister_robot = env.get_robot(robot_id)
+    md_0 = manhattan_distance(env.packages[0].position, env.packages[0].destination)
+    md_1 = manhattan_distance(env.packages[1].position, env.packages[1].destination)
+    if md_0 > md_1:
+        return env.packages[0], manhattan_distance(mister_robot.position, env.packages[0].position), md_0, 1
+    return env.packages[1], manhattan_distance(mister_robot.position, env.packages[1].position), md_1, 0
+
+
+def second_credit_package_distance(env: WarehouseEnv, robot_id: int, package_id: int):
+    mister_robot = env.get_robot(robot_id)
+    other_package = env.packages[package_id]
+    md_package = manhattan_distance(other_package.position, other_package.destination)
+    md_robot = manhattan_distance(mister_robot.position, other_package.position)
+    return md_robot, md_package
+
+
 def smart_heuristic(env: WarehouseEnv, robot_id: int):
-    pass
+    mister_robot = env.get_robot(robot_id)
+    best_credit = best_credit_package_distance(env, robot_id)
+    other_distance = second_credit_package_distance(env, robot_id, best_credit[3])
+    if mister_robot.package is not None and mister_robot.battery > manhattan_distance(mister_robot.position,
+                                                                                      mister_robot.package.destination):
+        return 1000 + 50 * manhattan_distance(mister_robot.package.position, mister_robot.package.destination) + \
+               100 * mister_robot.credit + 50 * mister_robot.battery
+    elif mister_robot.package is not None and mister_robot.battery <= \
+            manhattan_distance(mister_robot.position, mister_robot.package.destination):
+        return 500 * mister_robot.credit + 100 * mister_robot.battery - min_distance_charge(env, robot_id)
+    elif mister_robot.package is None and (best_credit[1] + best_credit[2] + 2) < mister_robot.battery:
+        return 500 * mister_robot.credit + 50 * 2 * best_credit[2] - best_credit[1]
+    elif mister_robot.package is None and (other_distance[1] + other_distance[0] + 2) < mister_robot.battery:
+        return 200 * mister_robot.credit + 20 * 2 * other_distance[1] - other_distance[0]
+    else:
+        500 * mister_robot.credit - min_distance_charge(env, robot_id)
+
 
 class AgentGreedyImproved(AgentGreedy):
     def heuristic(self, env: WarehouseEnv, robot_id: int):

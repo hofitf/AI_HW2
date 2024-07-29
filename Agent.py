@@ -25,7 +25,7 @@ class Agent:
 class AgentRandom(Agent):
     def run_step(self, env: WarehouseEnv, robot_id, time_limit):
         operators, _ = self.successors(env, robot_id)
-        return random.choice(operators)
+        return random.choice(operators) 
 
 
 class AgentGreedy(Agent):
