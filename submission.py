@@ -30,24 +30,29 @@ def second_credit_package_distance(env: WarehouseEnv, robot_id: int, package_id:
 
 def smart_heuristic(env: WarehouseEnv, robot_id: int):
     mister_robot = env.get_robot(robot_id)
+    other_robot = env.get_robot(1)
+    if robot_id == 1 :
+        other_robot = env.get_robot(0)
     best_credit = best_credit_package_distance(env, robot_id)
     other_distance = second_credit_package_distance(env, robot_id, best_credit[3])
     if mister_robot.package is not None and mister_robot.battery > manhattan_distance(mister_robot.position,
                                                                                       mister_robot.package.destination):
-        return 1000 + manhattan_distance(mister_robot.package.position, mister_robot.package.destination) - \
-               manhattan_distance(mister_robot.position, mister_robot.package.destination) + \
-               100 * mister_robot.credit + 100 * mister_robot.battery
+        return 500 * manhattan_distance(mister_robot.package.position, mister_robot.package.destination) - \
+            manhattan_distance(mister_robot.position, mister_robot.package.destination) + \
+            500 * mister_robot.credit + 100 * mister_robot.battery
     elif mister_robot.package is not None and mister_robot.battery <= \
             manhattan_distance(mister_robot.position, mister_robot.package.destination):
         return 500 * mister_robot.credit + 100 * mister_robot.battery - min_distance_charge(env, robot_id)
     elif mister_robot.package is None and (best_credit[1] + best_credit[2] + 2) < mister_robot.battery and \
             best_credit[0].on_board:
         return 500 * mister_robot.credit + 50 * 2 * best_credit[2] - best_credit[1]
-    elif mister_robot.package is None and (other_distance[1] + other_distance[0] + 2) < mister_robot.battery\
+    elif mister_robot.package is None and (other_distance[1] + other_distance[0] + 2) < mister_robot.battery \
             and env.packages[best_credit[3]].on_board:
-        return 200 * mister_robot.credit + 20 * 2 * other_distance[1] - other_distance[0]
+        return 500 * mister_robot.credit + 20 * 2 * other_distance[1] - other_distance[0]
+    elif mister_robot.credit <= other_robot.credit:
+        1000 * mister_robot.credit + 1000 * mister_robot.battery - min_distance_charge(env, robot_id)
     else:
-        500 * mister_robot.credit - min_distance_charge(env, robot_id)
+        return 500 * mister_robot.credit + 500 * mister_robot.battery - min_distance_charge(env, robot_id)
 
 
 class AgentGreedyImproved(AgentGreedy):
