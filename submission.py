@@ -69,23 +69,17 @@ class AgentMinimax(Agent):
             return smart_heuristic(env, agent_id)
         if turn % 2 == 0:
             max_value = float('-inf')
-            operators = env.get_legal_operators(agent_id)
-            children = [env.clone() for _ in operators]
-            for child, op in zip(children, operators):
-                child.apply_operator(agent_id, op)
-                value = self.RB_Minimax(env, agent_id, depth - 1, turn + 1)
+            operators, children = self.successors(env, agent_id)
+            for child in children:
+                value = self.RB_Minimax(child, agent_id, depth - 1, turn + 1)
                 max_value = max(max_value, value)
             return max_value
         else:
             min_value = float('inf')
-            other_agent = 0
-            if agent_id == 0:
-                other_agent = 1
-            operators = env.get_legal_operators(other_agent)
-            children = [env.clone() for _ in operators]
-            for child, op in zip(children, operators):
-                child.apply_operator(other_agent, op)
-                value = self.RB_Minimax(env, agent_id, depth - 1, turn + 1)
+            other_agent = (agent_id + 1) % 2
+            operators, children = self.successors(env, other_agent)
+            for child in children:
+                value = self.RB_Minimax(child, agent_id, depth - 1, turn + 1)
                 min_value = min(min_value, value)
             return min_value
 
@@ -98,12 +92,10 @@ class AgentMinimax(Agent):
             while True:
                 current_best_value = float('-inf')
                 current_best_move = None
-                operators = env.get_legal_operators(agent_id)
-                children = [env.clone() for _ in operators]
+                operators, children = self.successors(env, agent_id)
                 for child, op in zip(children, operators):
-                    child.apply_operator(agent_id, op)
-                    move_value = func_timeout(time_limit - (time.time() - start_time), self.RB_Minimax,
-                                 args=(env, agent_id, depth, 1))
+                    move_value = func_timeout(time_limit - (time.time() - start_time)-0.15, self.RB_Minimax,
+                                 args=(child, agent_id, depth, 1))
                     if move_value > current_best_value:
                         current_best_value = move_value
                         current_best_move = op
@@ -114,9 +106,7 @@ class AgentMinimax(Agent):
 
                 depth += 1
         except FunctionTimedOut:
-            pass
-
-        return best_move
+            return best_move
 
 
 class AgentAlphaBeta(Agent):
