@@ -1,6 +1,9 @@
+
 from Agent import Agent, AgentGreedy
 from WarehouseEnv import WarehouseEnv, manhattan_distance
 import random
+import time
+from func_timeout import func_timeout, FunctionTimedOut
 
 
 def min_distance_charge(env: WarehouseEnv, robot_id: int):
@@ -38,8 +41,8 @@ def smart_heuristic(env: WarehouseEnv, robot_id: int):
     if mister_robot.package is not None and mister_robot.battery > manhattan_distance(mister_robot.position,
                                                                                       mister_robot.package.destination):
         return 500 * manhattan_distance(mister_robot.package.position, mister_robot.package.destination) - \
-            manhattan_distance(mister_robot.position, mister_robot.package.destination) + \
-            500 * mister_robot.credit + 100 * mister_robot.battery
+               manhattan_distance(mister_robot.position, mister_robot.package.destination) + \
+               500 * mister_robot.credit + 100 * mister_robot.battery
     elif mister_robot.package is not None and mister_robot.battery <= \
             manhattan_distance(mister_robot.position, mister_robot.package.destination):
         return 500 * mister_robot.credit + 100 * mister_robot.battery - min_distance_charge(env, robot_id)
@@ -61,9 +64,61 @@ class AgentGreedyImproved(AgentGreedy):
 
 
 class AgentMinimax(Agent):
-    # TODO: section b : 1
+
+    def RB_Minimax(self, env: WarehouseEnv, agent_id, depth, turn):
+        if depth == 0:
+            return smart_heuristic(env, agent_id)
+        if turn % 2 == 0:
+            max_value = float('-inf')
+            operators = env.get_legal_operators(agent_id)
+            children = [env.clone() for _ in operators]
+            for child, op in zip(children, operators):
+                child.apply_operator(agent_id, op)
+                value = self.RB_Minimax(env, agent_id, depth - 1, turn + 1)
+                max_value = max(max_value, value)
+            return max_value
+        else:
+            min_value = float('inf')
+            other_agent = 0
+            if agent_id == 0:
+                other_agent = 1
+            operators = env.get_legal_operators(other_agent)
+            children = [env.clone() for _ in operators]
+            for child, op in zip(children, operators):
+                child.apply_operator(other_agent, op)
+                value = self.RB_Minimax(env, agent_id, depth - 1, turn + 1)
+                min_value = min(min_value, value)
+            return min_value
+
     def run_step(self, env: WarehouseEnv, agent_id, time_limit):
-        raise NotImplementedError()
+        start_time = time.time()
+        best_move = None
+        best_value = float('-inf')
+        depth = 1
+        try:
+            while True:
+                current_best_value = float('-inf')
+                current_best_move = None
+                operators = env.get_legal_operators(agent_id)
+                children = [env.clone() for _ in operators]
+                for child, op in zip(children, operators):
+                    child.apply_operator(agent_id, op)
+                    move_value = func_timeout(time_limit - (time.time() - start_time), minimax,
+                                              args=(new_state, depth, float('-inf'), float('inf'), False))
+                    if move_value > current_best_value:
+                        current_best_value = move_value
+                        current_best_move = move
+
+                if current_best_value > best_value:
+                    best_value = current_best_value
+                    best_move = current_best_move
+
+                depth += 1
+
+        except FunctionTimedOut:
+            pass
+
+        return best_move
 
 
 class AgentAlphaBeta(Agent):
