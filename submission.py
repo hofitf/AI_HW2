@@ -92,7 +92,7 @@ class AgentMinimax(Agent):
                 current_best_move = None
                 operators, children = self.successors(env, agent_id)
                 for child, op in zip(children, operators):
-                    move_value = func_timeout(time_limit - (time.time() - start_time)-0.15, self.RB_Minimax,
+                    move_value = func_timeout(time_limit - (time.time() - start_time)-0.1, self.RB_Minimax,
                                  args=(child, agent_id, depth, 1))
                     if move_value > current_best_value:
                         current_best_value = move_value
