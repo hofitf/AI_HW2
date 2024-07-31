@@ -49,7 +49,7 @@ def smart_heuristic(env: WarehouseEnv, robot_id: int):
     elif mister_robot.package is None and (other_distance[1] + other_distance[0] + 2) < mister_robot.battery \
             and env.packages[best_credit[3]].on_board:
         return 500 * mister_robot.credit + 20 * 2 * other_distance[1] - other_distance[0]
-    elif mister_robot.credit <= other_robot.credit:
+    elif mister_robot.credit < other_robot.credit:
         return 1000 * mister_robot.credit - min_distance_charge(env, robot_id)
     else:
         return 500 * mister_robot.credit - min_distance_charge(env, robot_id)
