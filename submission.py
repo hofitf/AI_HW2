@@ -31,7 +31,7 @@ def second_credit_package_distance(env: WarehouseEnv, robot_id: int, package_id:
 def smart_heuristic(env: WarehouseEnv, robot_id: int):
     mister_robot = env.get_robot(robot_id)
     other_robot = env.get_robot(1)
-    if robot_id == 1 :
+    if robot_id == 1:
         other_robot = env.get_robot(0)
     best_credit = best_credit_package_distance(env, robot_id)
     other_distance = second_credit_package_distance(env, robot_id, best_credit[3])
@@ -52,7 +52,7 @@ def smart_heuristic(env: WarehouseEnv, robot_id: int):
     elif mister_robot.credit <= other_robot.credit:
         return 1000 * mister_robot.credit + 1000 * mister_robot.battery - min_distance_charge(env, robot_id)
     else:
-        return 500 * mister_robot.credit + 500 * mister_robot.battery - min_distance_charge(env, robot_id)
+        return 500 * mister_robot.credit - min_distance_charge(env, robot_id)
 
 
 class AgentGreedyImproved(AgentGreedy):
