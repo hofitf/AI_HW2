@@ -3,7 +3,6 @@ from Agent import Agent, AgentGreedy
 from WarehouseEnv import WarehouseEnv, manhattan_distance
 import random
 import time
-from func_timeout import func_timeout, FunctionTimedOut
 
 
 def min_distance_charge(env: WarehouseEnv, robot_id: int):
@@ -95,28 +94,23 @@ class AgentMinimax(Agent):
         best_move = None
         best_value = float('-inf')
         depth = 1
-        try:
-            while True:
-                current_best_value = float('-inf')
-                current_best_move = None
-                operators = env.get_legal_operators(agent_id)
-                children = [env.clone() for _ in operators]
-                for child, op in zip(children, operators):
-                    child.apply_operator(agent_id, op)
-                    move_value = func_timeout(time_limit - (time.time() - start_time), minimax,
-                                              args=(new_state, depth, float('-inf'), float('inf'), False))
-                    if move_value > current_best_value:
-                        current_best_value = move_value
-                        current_best_move = move
+        while time.time() - start_time < time_limit:
+            current_best_value = float('-inf')
+            current_best_move = None
+            operators = env.get_legal_operators(agent_id)
+            children = [env.clone() for _ in operators]
+            for child, op in zip(children, operators):
+                child.apply_operator(agent_id, op)
+                move_value = self.RB_Minimax(env, agent_id, depth, 1)
+                if move_value > current_best_value:
+                    current_best_value = move_value
+                    current_best_move = op
 
-                if current_best_value > best_value:
-                    best_value = current_best_value
-                    best_move = current_best_move
+            if current_best_value > best_value:
+                best_value = current_best_value
+                best_move = current_best_move
 
-                depth += 1
-
-        except FunctionTimedOut:
-            pass
+            depth += 1
 
         return best_move
 
