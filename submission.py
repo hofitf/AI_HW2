@@ -92,8 +92,8 @@ class AgentMinimax(Agent):
                 current_best_move = None
                 operators, children = self.successors(env, agent_id)
                 for child, op in zip(children, operators):
-                    move_value = func_timeout(time_limit - (time.time() - start_time)-0.1, self.RB_Minimax,
-                                 args=(child, agent_id, depth, 1))
+                    move_value = func_timeout(time_limit - (time.time() - start_time) - 0.1, self.RB_Minimax,
+                                              args=(child, agent_id, depth, 1))
                     if move_value > current_best_value:
                         current_best_value = move_value
                         current_best_move = op
@@ -108,15 +108,131 @@ class AgentMinimax(Agent):
 
 
 class AgentAlphaBeta(Agent):
-    # TODO: section c : 1
+    def RB_alpha_beta(self, env: WarehouseEnv, agent_id, depth, turn, alpha, beta):
+        if depth == 0:
+            return smart_heuristic(env, agent_id)
+        if turn % 2 == 0:
+            max_value = float('-inf')
+            operators, children = self.successors(env, agent_id)
+            for child in children:
+                value = self.RB_alpha_beta(child, agent_id, depth - 1, turn + 1, alpha, beta)
+                max_value = max(max_value, value)
+                alpha = max(max_value, alpha)
+                if max_value >= beta:
+                    return float('inf')
+            return max_value
+        else:
+            min_value = float('inf')
+            other_agent = (agent_id + 1) % 2
+            operators, children = self.successors(env, other_agent)
+            for child in children:
+                value = self.RB_alpha_beta(child, agent_id, depth - 1, turn + 1, alpha, beta)
+                min_value = min(min_value, value)
+                beta = min(min_value, beta)
+                if min_value <= alpha:
+                    return float('-inf')
+            return min_value
+
     def run_step(self, env: WarehouseEnv, agent_id, time_limit):
-        raise NotImplementedError()
+        start_time = time.time()
+        best_move = None
+        best_value = float('-inf')
+        depth = 1
+        try:
+            while True:
+                current_best_value = float('-inf')
+                current_best_move = None
+                operators, children = self.successors(env, agent_id)
+                for child, op in zip(children, operators):
+                    move_value = func_timeout(time_limit - (time.time() - start_time) - 0.1, self.RB_alpha_beta,
+                                              args=(child, agent_id, depth, 1, float('-inf'), float('inf')))
+                    if move_value > current_best_value:
+                        current_best_value = move_value
+                        current_best_move = op
+
+                if current_best_value > best_value:
+                    best_value = current_best_value
+                    best_move = current_best_move
+
+                depth += 1
+        except FunctionTimedOut:
+            return best_move
 
 
 class AgentExpectimax(Agent):
-    # TODO: section d : 1
+
+    def RB_Expectimax(self, env: WarehouseEnv, agent_id, depth, turn):
+        if depth == 0:
+            return smart_heuristic(env, agent_id)
+        if turn % 2 == 1:
+            other_agent = (agent_id + 1) % 2
+            operators, children = self.successors(env, other_agent)
+            num_2 = 0
+            if "pick_up" in operators:
+                num_2 += 1
+            if "move right" in operators:
+                num_2 += 1
+            sum_prob = 0
+            if num_2 == 0:
+                for child in children:
+                    sum_prob += (1 / len(operators)) * self.RB_Expectimax(child, agent_id, depth - 1, turn + 1)
+            elif num_2 == 1:
+                for child, op in zip(children, operators):
+                    if op == "pick_up" or op == "move right":
+                        sum_prob += 2 * (1 / (len(operators) + 2)) * self.RB_Expectimax(child, agent_id, depth - 1,
+                                                                                        turn + 1)
+                    else:
+                        sum_prob += (1 / (len(operators) + 2)) * self.RB_Expectimax(child, agent_id, depth - 1,
+                                                                                    turn + 1)
+            else:
+                for child, op in zip(children, operators):
+                    if op == "pick_up" or op == "move right":
+                        sum_prob += 2 * (1 / (len(operators) + 4)) * self.RB_Expectimax(child, agent_id, depth - 1,
+                                                                                        turn + 1)
+                    else:
+                        sum_prob += (1 / (len(operators) + 4)) * self.RB_Expectimax(child, agent_id, depth - 1,
+                                                                                    turn + 1)
+            return sum_prob
+        if turn % 2 == 0:
+            max_value = float('-inf')
+            operators, children = self.successors(env, agent_id)
+            for child in children:
+                value = self.RB_Expectimax(child, agent_id, depth - 1, turn + 1)
+                max_value = max(max_value, value)
+            return max_value
+        else:
+            min_value = float('inf')
+            other_agent = (agent_id + 1) % 2
+            operators, children = self.successors(env, other_agent)
+            for child in children:
+                value = self.RB_Expectimax(child, agent_id, depth - 1, turn + 1)
+                min_value = min(min_value, value)
+            return min_value
+
     def run_step(self, env: WarehouseEnv, agent_id, time_limit):
-        raise NotImplementedError()
+        start_time = time.time()
+        best_move = None
+        best_value = float('-inf')
+        depth = 1
+        try:
+            while True:
+                current_best_value = float('-inf')
+                current_best_move = None
+                operators, children = self.successors(env, agent_id)
+                for child, op in zip(children, operators):
+                    move_value = func_timeout(time_limit - (time.time() - start_time) - 0.1, self.RB_Expectimax,
+                                              args=(child, agent_id, depth, 1))
+                    if move_value > current_best_value:
+                        current_best_value = move_value
+                        current_best_move = op
+
+                if current_best_value > best_value:
+                    best_value = current_best_value
+                    best_move = current_best_move
+
+                depth += 1
+        except FunctionTimedOut:
+            return best_move
 
 
 # here you can check specific paths to get to know the environment
